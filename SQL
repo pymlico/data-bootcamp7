@@ -1,0 +1,153 @@
+-- create restaurant database
+-- create 5 tables
+
+.open restaurant.db
+
+DROP TABLE customer;
+DROP TABLE invoice;
+DROP TABLE food;
+DROP TABLE staff;
+DROP TABLE menus;
+
+CREATE TABLE customer (
+  customer_id int,
+  firstname varchar,
+  lastname varchar,
+  email varchar,
+  food_id int
+);
+
+INSERT INTO customer VALUES
+  (1,'Pim','Yoth','pim@gmail.com',1),
+  (2,'Zara','Wang','zara@gmail.com',1),
+  (3,'Ploy','Zap','pim@gmail.com',2),
+  (4,'Gorge','Town','pim@gmail.com',3);
+
+CREATE TABLE invoice (
+  invoice_id INT,
+  invoice_value REAL,
+  customer_id INT,
+  staff_id INT
+);
+
+INSERT INTO invoice VALUES 
+  (1,1500,1,1),
+  (2,700,2,1),
+  (3,550,3,2),
+  (4,250,1,2),
+  (5,900,2,3),
+  (6,450,3,3),
+  (7,300,1,4),
+  (8,770,2,4),
+  (9,650,3,5);
+
+CREATE TABLE staff (
+  staff_id int,
+  firstname varchar,
+  lastname varchar,
+  phone varchar
+);
+
+INSERT INTO staff VALUES
+  (1,'Nadej','Kiku','0921113333'),
+  (2,'Alex','Theradej','0921114444'),
+  (3,'Beau','Melada','0921115555'),
+  (4,'Yaya','Urasaya','0921116666'),
+  (5,'J','Fai','0921117777');
+
+CREATE TABLE food (
+    food_id int,
+    food_name varchar,
+    quantity int,
+    unit_price REAL,
+    item_category varchar
+);
+
+INSERT INTO food values 
+    (1, 'cheese',6,300,'ingredient'),
+    (2, 'pepper',10,10,'ingredient'),
+    (3, 'chilli',4,20,'ingredient'),
+    (4, 'pork',7,300,'meat'),
+    (5, 'meatball',9,250,'meat'),
+    (6, 'chicken wing',11,150,'meat'),
+    (7, 'lamb',20,450,'meat'),
+    (8, 'carrot',10,50,'vegetable'),
+    (9, 'onion',11,40,'vegetable'),
+    (10, 'tomato',20,80,'vegetable'),
+    (11, 'pineapple',3,100,'fruit');
+
+CREATE TABLE menus (
+    menu_id int,
+    menu_name varchar,
+    menu_price REAL,
+    food_id int
+);
+
+INSERT INTO menus values 
+    (1, 'pizza',500,1),
+    (2, 'hotdog',300,2),
+    (3, 'hamburger',450,4),
+    (4, 'somtum',150,8),
+    (1, 'pizza',500,3),
+    (2, 'hotdog',300,5),
+    (3, 'hamburger',450,6),
+    (4, 'somtum',150,10),
+    (1, 'pizza',500,5),
+    (2, 'hotdog',300,7),
+    (3, 'hamburger',450,10),
+    (4, 'somtum',150,3);
+
+.mode column
+.header on
+
+-- write 3-5 queries
+
+/*select 
+  s.firstname AS staff_name,
+  i.invoice_value AS invoice
+FROM invoice AS i 
+INNER JOIN staff AS s ON i.staff_id = s.staff_id
+INNER JOIN customer AS c ON i.customer_id = c.customer_id
+GROUP BY staff_name
+HAVING invoice>600
+ORDER BY invoice DESC
+LIMIT 2;*/
+
+-- 1x with
+-- 1xsubquery
+-- 1x Aggregate function
+
+/*WITH staff_sale AS (
+select 
+  s.firstname AS staff_name,
+  i.invoice_value AS invoice
+FROM invoice AS i 
+INNER JOIN staff AS s ON i.staff_id = s.staff_id
+INNER JOIN customer AS c ON i.customer_id = c.customer_id
+GROUP BY staff_name
+ORDER BY invoice DESC)
+  
+SELECT sum(invoice)
+FROM staff_sale;*/
+
+-- To segment customer by tier of purchase transaction and provide gift reward by tier
+
+WITH customer_transaction AS(
+SELECT
+  c.firstname AS firstname,
+  c.lastname AS lastname, 
+  sum(i.invoice_value) AS invoice,
+  NTILE(3) OVER(ORDER BY invoice_value) AS customer_segment
+FROM invoice AS i 
+INNER JOIN customer AS c ON i.customer_id = c.customer_id
+GROUP BY firstname)
+
+SELECT 
+  firstname,
+  lastname, 
+  invoice,
+  CASE WHEN customer_segment IN (1) THEN 'Silver'
+      WHEN customer_segment IN (2) THEN 'Gold'
+  ELSE 'Platinum'
+  END Reward
+FROM customer_transaction;
